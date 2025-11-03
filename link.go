@@ -382,6 +382,13 @@ const (
 	NETKIT_MODE_L3
 )
 
+type NetkitPairing uint32
+
+const (
+	NETKIT_DEVICE_PAIR NetkitPairing = iota
+	NETKIT_DEVICE_SINGLE
+)
+
 type NetkitPolicy int
 
 const (
@@ -408,6 +415,7 @@ func (n *Netkit) SetPeerAttrs(Attrs *LinkAttrs) {
 type Netkit struct {
 	LinkAttrs
 	Mode            NetkitMode
+	Pairing         NetkitPairing
 	Policy          NetkitPolicy
 	PeerPolicy      NetkitPolicy
 	Scrub           NetkitScrub

@@ -2889,6 +2889,7 @@ func addNetkitAttrs(nk *Netkit, linkInfo *nl.RtAttr, flag int) error {
 	data.AddRtAttr(nl.IFLA_NETKIT_PEER_POLICY, nl.Uint32Attr(uint32(nk.PeerPolicy)))
 	data.AddRtAttr(nl.IFLA_NETKIT_SCRUB, nl.Uint32Attr(uint32(nk.Scrub)))
 	data.AddRtAttr(nl.IFLA_NETKIT_PEER_SCRUB, nl.Uint32Attr(uint32(nk.PeerScrub)))
+	data.AddRtAttr(nl.IFLA_NETKIT_PAIRING, nl.Uint32Attr(uint32(nk.Pairing)))
 
 	// Any headroom or tailroom set on the primary device attributes will result in
 	// the kernel carrying them over into the peer device attributes for us.
@@ -2904,44 +2905,46 @@ func addNetkitAttrs(nk *Netkit, linkInfo *nl.RtAttr, flag int) error {
 		return nil
 	}
 
-	peer := data.AddRtAttr(nl.IFLA_NETKIT_PEER_INFO, nil)
-	msg := nl.NewIfInfomsg(unix.AF_UNSPEC)
-	if nk.peerLinkAttrs.Flags&net.FlagUp != 0 {
-		msg.Change = unix.IFF_UP
-		msg.Flags = unix.IFF_UP
-	}
-	if nk.peerLinkAttrs.Index != 0 {
-		msg.Index = int32(nk.peerLinkAttrs.Index)
-	}
-	peer.AddChild(msg)
-	if nk.peerLinkAttrs.Name != "" {
-		peer.AddRtAttr(unix.IFLA_IFNAME, nl.ZeroTerminated(nk.peerLinkAttrs.Name))
-	}
-	if nk.peerLinkAttrs.MTU > 0 {
-		peer.AddRtAttr(unix.IFLA_MTU, nl.Uint32Attr(uint32(nk.peerLinkAttrs.MTU)))
-	}
-	if nk.peerLinkAttrs.GSOMaxSegs > 0 {
-		peer.AddRtAttr(unix.IFLA_GSO_MAX_SEGS, nl.Uint32Attr(nk.peerLinkAttrs.GSOMaxSegs))
-	}
-	if nk.peerLinkAttrs.GSOMaxSize > 0 {
-		peer.AddRtAttr(unix.IFLA_GSO_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GSOMaxSize))
-	}
-	if nk.peerLinkAttrs.GSOIPv4MaxSize > 0 {
-		peer.AddRtAttr(unix.IFLA_GSO_IPV4_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GSOIPv4MaxSize))
-	}
-	if nk.peerLinkAttrs.GROIPv4MaxSize > 0 {
-		peer.AddRtAttr(unix.IFLA_GRO_IPV4_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GROIPv4MaxSize))
-	}
-	if nk.peerLinkAttrs.Namespace != nil {
-		switch ns := nk.peerLinkAttrs.Namespace.(type) {
-		case NsPid:
-			peer.AddRtAttr(unix.IFLA_NET_NS_PID, nl.Uint32Attr(uint32(ns)))
-		case NsFd:
-			peer.AddRtAttr(unix.IFLA_NET_NS_FD, nl.Uint32Attr(uint32(ns)))
+	if nk.Pairing == NETKIT_DEVICE_PAIR {
+		peer := data.AddRtAttr(nl.IFLA_NETKIT_PEER_INFO, nil)
+		msg := nl.NewIfInfomsg(unix.AF_UNSPEC)
+		if nk.peerLinkAttrs.Flags&net.FlagUp != 0 {
+			msg.Change = unix.IFF_UP
+			msg.Flags = unix.IFF_UP
 		}
-	}
-	if nk.peerLinkAttrs.HardwareAddr != nil {
-		peer.AddRtAttr(unix.IFLA_ADDRESS, []byte(nk.peerLinkAttrs.HardwareAddr))
+		if nk.peerLinkAttrs.Index != 0 {
+			msg.Index = int32(nk.peerLinkAttrs.Index)
+		}
+		peer.AddChild(msg)
+		if nk.peerLinkAttrs.Name != "" {
+			peer.AddRtAttr(unix.IFLA_IFNAME, nl.ZeroTerminated(nk.peerLinkAttrs.Name))
+		}
+		if nk.peerLinkAttrs.MTU > 0 {
+			peer.AddRtAttr(unix.IFLA_MTU, nl.Uint32Attr(uint32(nk.peerLinkAttrs.MTU)))
+		}
+		if nk.peerLinkAttrs.GSOMaxSegs > 0 {
+			peer.AddRtAttr(unix.IFLA_GSO_MAX_SEGS, nl.Uint32Attr(nk.peerLinkAttrs.GSOMaxSegs))
+		}
+		if nk.peerLinkAttrs.GSOMaxSize > 0 {
+			peer.AddRtAttr(unix.IFLA_GSO_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GSOMaxSize))
+		}
+		if nk.peerLinkAttrs.GSOIPv4MaxSize > 0 {
+			peer.AddRtAttr(unix.IFLA_GSO_IPV4_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GSOIPv4MaxSize))
+		}
+		if nk.peerLinkAttrs.GROIPv4MaxSize > 0 {
+			peer.AddRtAttr(unix.IFLA_GRO_IPV4_MAX_SIZE, nl.Uint32Attr(nk.peerLinkAttrs.GROIPv4MaxSize))
+		}
+		if nk.peerLinkAttrs.Namespace != nil {
+			switch ns := nk.peerLinkAttrs.Namespace.(type) {
+			case NsPid:
+				peer.AddRtAttr(unix.IFLA_NET_NS_PID, nl.Uint32Attr(uint32(ns)))
+			case NsFd:
+				peer.AddRtAttr(unix.IFLA_NET_NS_FD, nl.Uint32Attr(uint32(ns)))
+			}
+		}
+		if nk.peerLinkAttrs.HardwareAddr != nil {
+			peer.AddRtAttr(unix.IFLA_ADDRESS, []byte(nk.peerLinkAttrs.HardwareAddr))
+		}
 	}
 	return nil
 }
